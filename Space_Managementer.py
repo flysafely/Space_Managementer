@@ -37,7 +37,7 @@ global accumulation_data_StrValue
 global pricezone_data_StrValue
 global budget_data_StrValue
 
-Version = "2.05"
+Version = "2.1"
 Software_Name = "sm"
 
 All_Sheets_Data_Dict = {}
@@ -531,6 +531,9 @@ def loadview():
 
     Status_label = StringVar()
     Status_label.set("准备开始")
+
+
+
     l5 = Label(root, font='微软雅黑 -11',
                bg='lightgray',
                textvariable=Status_label,
@@ -538,11 +541,18 @@ def loadview():
                                   row=8,
                                   sticky=N + S + E + W,
                                   columnspan=3)
+    Button(root, text="检查更新",
+           font='微软雅黑 -9',
+           width=6,
+           height=1,
+           command=lambda:Add_Thread(cku.check_update("130.130.200.30",
+                                        Software_Name, Version, download_windows, DownLoad))).grid(column=3,
+                                               row=8,
+                                               sticky=W,
+                                               columnspan=1)
 
     Add_Thread(lambda: Check_registration_Status_label(
         "http://130.130.200.49", "registrationcode.ini", b"1234567890123456"))
-    Add_Thread(lambda: cku.check_update("130.130.200.30",
-                                        Software_Name, Version, download_windows, DownLoad))
 
     root.mainloop()
 
@@ -1378,7 +1388,7 @@ def Build_Final_Table(FilePath, del_option, sort_option):
                         Column_2rd_Char = Column_Name[Final_Table_Title.index(
                             Sum_Formula_info[Sum_column]["字段"][1])]
                         Excel_Sheets(Sheet_Num).Cells(Row_Count + 1,
-                                                      Column_Num).Value = "=%s%s/%s%s" % (Column_1st_Char,
+                                                      Column_Num).Value = "=%s%s/%s%s-1" % (Column_1st_Char,
                                                                                           Row_Count + 1,
                                                                                           Column_2rd_Char,
                                                                                           Row_Count + 1
