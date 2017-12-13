@@ -36,8 +36,9 @@ global management_data_StrValue
 global accumulation_data_StrValue
 global pricezone_data_StrValue
 global budget_data_StrValue
+global floor_ignore_option, category_ignore_option, floor_ignore_checkbutton, category_ignore_checkbutton
 
-Version = "2.1"
+Version = "2.5"
 Software_Name = "sm"
 
 All_Sheets_Data_Dict = {}
@@ -266,6 +267,12 @@ def DownLoad(dbnum, dbsize, size):
 
     download_ProgressValue.set(percent)
 
+def ignore_option_pass(window,option1,option2):
+    global floor_ignore_option, category_ignore_option
+    window.withdraw()
+    floor_ignore_option = option1
+    category_ignore_option = option2
+
 
 def loadview():
 
@@ -275,6 +282,7 @@ def loadview():
     global accumulation_data_StrValue
     global pricezone_data_StrValue
     global budget_data_StrValue
+    global floor_ignore_option, category_ignore_option, floor_ignore_checkbutton, category_ignore_checkbutton
 
     root = tkinter.Tk()
     root.title('空间管理报表生成器-version:%s' % Version)
@@ -282,8 +290,7 @@ def loadview():
     root.iconbitmap(ico)
 
     #####################窗口初始化参数#####################
-    windows_params = Check_System_Info(
-        root.winfo_screenwidth() // 2 - 187, root.winfo_screenheight() // 2 - 260)
+    windows_params = Check_System_Info(root.winfo_screenwidth() // 2 - 187, root.winfo_screenheight() // 2 - 260)
     root.geometry(windows_params["geometry"])
     root.maxsize(windows_params["maxsize-x"], windows_params["maxsize-y"])
     root.minsize(windows_params["maxsize-x"], windows_params["maxsize-y"])
@@ -307,15 +314,50 @@ def loadview():
     download_windows.iconbitmap(ico)
     download_ProgressValue = DoubleVar()
     download_ProgressValue.set(0.0)
-    ttk.Progressbar(download_windows, orient="horizontal",
-                    length=Progressbarwidth,
-                    mode="determinate",
-                    variable=download_ProgressValue).grid(column=1,
-                                                          row=1,
-                                                          sticky=W,
-                                                          columnspan=1)
+    ttk.Progressbar(download_windows, 
+                                        orient="horizontal",
+                                        length=Progressbarwidth,
+                                        mode="determinate",
+                                        variable=download_ProgressValue).grid(column=1,
+                                                                                                                              row=1,
+                                                                                                                              sticky=W,
+                                                                                                                              columnspan=1)
     download_windows.withdraw()
 
+    ####################自定义模式选择#####################
+    ignore_option_window = Toplevel()
+    ignore_option_window.geometry("201x60+%s+%s" % (root.winfo_screenwidth() // 2 - 100, root.winfo_screenheight() // 2 - 200))
+    ignore_option_window.title("模式选择")
+    ignore_option_window.iconbitmap(ico)
+    floor_ignore_option = IntVar()
+    category_ignore_option = IntVar()
+
+    floor_ignore_checkbutton = Checkbutton(ignore_option_window, text="忽略楼层          ",
+                             font='微软雅黑 -13',
+                             height=1,
+                             variable=floor_ignore_option,
+                             state='normal')
+    floor_ignore_checkbutton.grid(column=1,
+                                                                        row=1,
+                                                                        sticky=W,
+                                                                        columnspan=1)    
+    category_ignore_checkbutton = Checkbutton(ignore_option_window, text="忽略类别",
+                             font='微软雅黑 -13',
+                             height=1,
+                             variable=category_ignore_option,
+                             state='normal')
+    category_ignore_checkbutton.grid(column=2,
+                                                                                row=1,
+                                                                                sticky=E + N,
+                                                                                columnspan=1)
+
+    Button(ignore_option_window, text="确定",
+                                                                       width=20,
+                                                                       font='微软雅黑 -13 bold',
+                                                                       command = lambda : ignore_option_window.withdraw()).grid(column=1,
+                                                                                                                                                row=2,
+                                                                                                                                                sticky=W + N + S + E,
+                                                                                                                                                columnspan=2)      
     ######################################################
 
     financial_data_StrValue = StringVar()
@@ -332,7 +374,8 @@ def loadview():
     range_of_price_StrValue.set('1-100000')
     budget_data_StrValue.set('导入ZBH_051报表(1月至12月数据)')
 
-    TextBox_Dict = {"fData": financial_data_StrValue,
+    TextBox_Dict = {
+                    "fData": financial_data_StrValue,
                     "mData": management_data_StrValue,
                     "aData": accumulation_data_StrValue,
                     "pData": pricezone_data_StrValue,
@@ -532,8 +575,6 @@ def loadview():
     Status_label = StringVar()
     Status_label.set("准备开始")
 
-
-
     l5 = Label(root, font='微软雅黑 -11',
                bg='lightgray',
                textvariable=Status_label,
@@ -541,6 +582,17 @@ def loadview():
                                   row=8,
                                   sticky=N + S + E + W,
                                   columnspan=3)
+
+    ########################################################
+    Button(root, text="模式选择",
+           font='微软雅黑 -9',
+           width=6,
+           height=1,
+           command=lambda:ignore_option_window.deiconify()).grid(column=1,
+                                               row=8,
+                                               sticky=W,
+                                               columnspan=1)    
+
     Button(root, text="检查更新",
            font='微软雅黑 -9',
            width=6,
@@ -551,6 +603,7 @@ def loadview():
                                                sticky=W,
                                                columnspan=1)
 
+     ########################################################                                       
     Add_Thread(lambda: Check_registration_Status_label(
         "http://130.130.200.49", "registrationcode.ini", b"1234567890123456"))
 
@@ -697,6 +750,7 @@ def Open_Workbook_By_Win32com(excel, path):
 
 def Get_file_path(TextBox_Dict, PriceZone_Range, Data_KeyValue_Key):
     global FileName_Mapping, Transit_Path
+
     default_info = {}
     for (k, v) in TextBox_Dict.items():
         default_info[k] = v.get()
@@ -715,12 +769,11 @@ def Get_file_path(TextBox_Dict, PriceZone_Range, Data_KeyValue_Key):
                 if file_name in FileName_Mapping.keys():  # 防止多选的时候，选择了错误名称的文件
                     TextBox_Dict[FileName_Mapping[
                         file_name]].set("正在检查你的数据.请稍后！")
-                    Add_Thread(lambda:
-                               Check_Sheet_Validity(FileName_Mapping[file_name],
-                                                    Choosed_path,
-                                                    TextBox_Dict[
-                                                        FileName_Mapping[file_name]],
-                                                    PriceZone_Range))
+                    Add_Thread(lambda:Check_Sheet_Validity(FileName_Mapping[file_name],
+                                                                                                            Choosed_path,
+                                                                                                            TextBox_Dict[
+                                                                                                            FileName_Mapping[file_name]],
+                                                                                                            PriceZone_Range))
                 else:
                     tkinter.messagebox.showinfo(
                         "提示！", "%s.xlsx不是有效的数据源文件！" % file_name)
@@ -769,7 +822,8 @@ def Get_file_path(TextBox_Dict, PriceZone_Range, Data_KeyValue_Key):
 
 def Check_Sheet_Validity(DataName, choose_path, TextBox, PriceZone_Range):
     global BW_Data_KeyTitle, Excel_App
-
+    global floor_ignore_option,category_ignore_option
+    Column_Add_Num = 0
     isValid = True
     Sheet_Offset = {
         "fData": 1,
@@ -785,12 +839,30 @@ def Check_Sheet_Validity(DataName, choose_path, TextBox, PriceZone_Range):
     Location_Dict = Get_Values_Location(Excel_Sheet,
                                         BW_Data_KeyTitle[DataName]
                                         )
-    print(len(Location_Dict))
+
     if len(Location_Dict) != 0:
         for key in BW_Data_KeyTitle[DataName]:
             if key not in list(Location_Dict.keys()):
-                isValid = False
-                TextBox.set("错误描述:<%s>数据未找到！" % key)
+                if key not in ("楼层", "大类", "主营品类"):
+                    isValid = False
+                    TextBox.set("错误描述:<%s>数据未找到！" % key)
+                else:
+                    if key == "楼层":
+                        if floor_ignore_option.get() == 1:
+                            Location_Dict[key] = (Location_Dict["门店"][0],100)
+                        else:
+                            isValid = False
+                            TextBox.set("未找到‘楼层’信息，请检查！")
+                            #tkinter.messagebox.askyesno("警告！", "未选择<忽略楼层>模式，但未找到‘楼层’信息，请检查！")
+                    if key == "大类" or key == "主营品类":
+                        if category_ignore_option.get() == 1:
+                            Location_Dict[key] = (Location_Dict["门店"][0],101) 
+                        else:
+                            isValid = False
+                            TextBox.set("未找到‘类别’信息，请检查！")
+                            #tkinter.messagebox.askyesno("警告！","未选择<忽略类别>模式，但未找到‘大类’或‘主营品类’信息，请检查！")  
+
+
 
     else:
         isValid = False
@@ -853,6 +925,8 @@ def Get_RowNum_Of_Value_In_Area(Workbook, Sheet, Values, Columns):
 def BW_Data_Get(Workbook, Sheet, TextBox, DataName, Location_Dict):
     global BW_Title_Mapping  # BW 字段 和 最终报表 字段的映射
     global BW_Data_KeyTitle
+    global floor_ignore_option,category_ignore_option, floor_ignore_checkbutton, category_ignore_checkbutton
+    ignore_option_value_dict = {"楼层":(floor_ignore_option,floor_ignore_checkbutton),"类别":(category_ignore_option,category_ignore_checkbutton)}
     # 专柜号、楼层、大类需要向右位移1
     Used_Row_Count = Sheet.max_row
     Used_Column_Count = Sheet.max_column
@@ -867,8 +941,7 @@ def BW_Data_Get(Workbook, Sheet, TextBox, DataName, Location_Dict):
     Location_Column_Array = []
     if DataName != "aData":
         for title in BW_Data_KeyTitle[DataName]:
-            Location_Column_Array.append(
-                (BW_Title_Mapping[title], Location_Dict[title][1]))
+            Location_Column_Array.append((BW_Title_Mapping[title], Location_Dict[title][1]))
         # 单独将 专柜 的列号 添加进去，它是 专柜号的列号+1
     else:
         for title in BW_Data_KeyTitle[DataName]:
@@ -889,53 +962,67 @@ def BW_Data_Get(Workbook, Sheet, TextBox, DataName, Location_Dict):
                     (BW_Title_Mapping[title], Location_Dict[title][1]))
 
     if DataName != "mData":
-        Location_Column_Array.insert(
-            5, ("专柜", Location_Column_Array[4][1] + 1))
+        Location_Column_Array.insert(5, ("专柜", Location_Column_Array[4][1] + 1))
     # 筛选出所有显示‘结果’或者‘总体结果’的行号,用于下面循环中进行录入排除
-    Result_Cell_RowNum = Get_RowNum_Of_Value_In_Area(Workbook,
-                                                     Sheet,
-                                                     ["结果", "总体结果"],
-                                                     Location_Column_Array[0:5]
-                                                     )
+        Result_Cell_RowNum = Get_RowNum_Of_Value_In_Area(Workbook,
+                                                         Sheet,
+                                                         [None],
+                                                         [Location_Column_Array[5]]
+                                                         )
+    else:
+        Result_Cell_RowNum = Get_RowNum_Of_Value_In_Area(Workbook,
+                                                         Sheet,
+                                                         [None,"结果","总体结果"],
+                                                         [Location_Column_Array[4]]
+                                                         )
     #
-    Default_Record_Dict = {"门店": None, "分公司": None,
-                           "楼层": None, "类别": None}  # 记录同一个门店，分公司，楼层，类别的信息
+    Default_Record_Dict = {"门店": None, 
+                           "分公司": None,
+                           "楼层": None, 
+                           "类别": None}  # 记录同一个门店，分公司，楼层，类别的信息
+    
     Data_Dict = {}
     for row in range(Anchor_Cell[0] + 1, Used_Row_Count + 1):  # 从'专柜号'的下一行开始录入
         if row not in Result_Cell_RowNum:  # 录入非'结果'或'总体结果'
             Detail_Dict = {}
             for column_info in Location_Column_Array:
-                if column_info[0] in ["门店", "分公司", "楼层", "类别"]:
+                if column_info[0] in ["门店", "分公司"]:
                     if Sheet.cell(row=row, column=column_info[1] + Column_Offset[DataName]).value != None:
-                        Default_Record_Dict[column_info[0]] = Sheet.cell(
-                            row=row, column=column_info[1] + Column_Offset[DataName]).value
-                        Detail_Dict[column_info[0]] = Sheet.cell(row=row, column=column_info[
-                                                                 1] + Column_Offset[DataName]).value  # 获取分公司、专柜号、专柜名称 需要Column+1
+                        Default_Record_Dict[column_info[0]] = Sheet.cell(row=row, column=column_info[1] + Column_Offset[DataName]).value
+                        Detail_Dict[column_info[0]] = Sheet.cell(row=row, column=column_info[1] + Column_Offset[DataName]).value  # 获取分公司、专柜号、专柜名称 需要Column+1
                     else:
-                        Detail_Dict[column_info[0]] = Default_Record_Dict[
-                            column_info[0]]
+                        Detail_Dict[column_info[0]] = Default_Record_Dict[column_info[0]]
+                elif column_info[0] in ["楼层", "类别"]:
+                    if ignore_option_value_dict[column_info[0]][0].get() == 1 and Sheet.cell(row=row, column=column_info[1] + Column_Offset[DataName]).value == None:
+                        Detail_Dict[column_info[0]] = "未定义"  # 获取分公司、专柜号、专柜名称 需要Column+1
+                    elif ignore_option_value_dict[column_info[0]][0].get() == 1 and Sheet.cell(row=row, column=column_info[1] + Column_Offset[DataName]).value != None:
+                        ignore_option_value_dict[column_info[0]][1].deselect() #选了忽略字段 但是表中有对应字段数据
+                        TextBox.set("已经取消忽略'%s'的模式！" %(column_info[0]))
+                        Default_Record_Dict[column_info[0]] = Sheet.cell(row=row, column=column_info[1] + Column_Offset[DataName]).value
+                        Detail_Dict[column_info[0]] = Sheet.cell(row=row, column=column_info[1] + Column_Offset[DataName]).value
+                    elif ignore_option_value_dict[column_info[0]][0].get() == 0 and Sheet.cell(row=row, column=column_info[1] + Column_Offset[DataName]).value == None:
+                        Detail_Dict[column_info[0]] = Default_Record_Dict[column_info[0]]
+                    elif ignore_option_value_dict[column_info[0]][0].get() == 0 and Sheet.cell(row=row, column=column_info[1] + Column_Offset[DataName]).value != None:
+                        Default_Record_Dict[column_info[0]] = Sheet.cell(row=row, column=column_info[1] + Column_Offset[DataName]).value
+                        Detail_Dict[column_info[0]] = Sheet.cell(row=row, column=column_info[1] + Column_Offset[DataName]).value
+
                 # 因为BW总的 百分比值为 去掉%号后的值，需要转换成小数
                 elif "率" in column_info[0] or "同比" in column_info[0]:
                     if Sheet.cell(row=row, column=column_info[1]).value != None and Sheet.cell(row=row, column=column_info[1]).value != "X":
-                        Detail_Dict[column_info[0]] = Sheet.cell(
-                            row=row, column=column_info[1]).value / 100
+                        Detail_Dict[column_info[0]] = Sheet.cell(row=row, column=column_info[1]).value / 100
                     else:
                         Detail_Dict[column_info[0]] = 0
                 else:
                     if Sheet.cell(row=row, column=column_info[1]).value != None and Sheet.cell(row=row, column=column_info[1]).value != "X":
-                        Detail_Dict[column_info[0]] = Sheet.cell(
-                            row=row, column=column_info[1]).value
+                        Detail_Dict[column_info[0]] = Sheet.cell(row=row, column=column_info[1]).value
                     else:
                         Detail_Dict[column_info[0]] = 0
             # 添加一个 识别标识用于 不同表格中的数据匹配整合
             if DataName in ["fData", "aData", "bData"]:  # 这3张表 都是051 字段对应的值一样
-                Detail_Dict["组合标识"] = Detail_Dict[
-                    "分公司"] + "*" + Detail_Dict["楼层"] + "*" + Detail_Dict["类别"] + "*" + Detail_Dict["专柜"]
+                Detail_Dict["组合标识"] = Detail_Dict["分公司"] + "*" + Detail_Dict["楼层"] + "*" + Detail_Dict["类别"] + "*" + Detail_Dict["专柜"]
             else:  # 因为经营数据中的 专柜号 下面就是 专柜名称  所以组合成识别标识的时候直接用专柜号 的值
-                Detail_Dict["组合标识"] = Detail_Dict[
-                    "分公司"] + "*" + Detail_Dict["楼层"] + "*" + Detail_Dict["类别"] + "*" + Detail_Dict["专柜号"]
+                Detail_Dict["组合标识"] = Detail_Dict["分公司"] + "*" + Detail_Dict["楼层"] + "*" + Detail_Dict["类别"] + "*" + Detail_Dict["专柜号"]
         Data_Dict[Detail_Dict["组合标识"]] = Detail_Dict
-
     TextBox.set("导入数据正确!")
     return Data_Dict
 
@@ -1025,22 +1112,20 @@ def Start_Build(pay_windows, del_option, sort_option, StrValues):
                         Company_In_Dict, Department_In_Dict))
 
 
+
 def PriceZone_Data_Supplement():
     global All_Sheets_Data_Dict
     Data_Name_Array = ["fData", "mData", "pData", "bData"]
     PriceZone_Data_Key_Array = list(All_Sheets_Data_Dict["pData"].keys())
-
     for keyvalue in All_Sheets_Data_Dict["aData"]:
         for Data_Name in Data_Name_Array:
             if Data_Name != "pData":
                 if keyvalue in All_Sheets_Data_Dict[Data_Name].keys():
                     for title in BW_Data_KeyTitle[Data_Name][5:]:
-                        All_Sheets_Data_Dict["aData"][keyvalue][BW_Title_Mapping[
-                            title]] = All_Sheets_Data_Dict[Data_Name][keyvalue][BW_Title_Mapping[title]]
+                        All_Sheets_Data_Dict["aData"][keyvalue][BW_Title_Mapping[title]] = All_Sheets_Data_Dict[Data_Name][keyvalue][BW_Title_Mapping[title]]
                 else:
                     for title in BW_Data_KeyTitle[Data_Name][5:]:
-                        All_Sheets_Data_Dict["aData"][keyvalue][
-                            BW_Title_Mapping[title]] = 0
+                        All_Sheets_Data_Dict["aData"][keyvalue][BW_Title_Mapping[title]] = 0
             else:
                 Shoppe_Name = keyvalue.split("*")[3]
                 if Shoppe_Name in PriceZone_Data_Key_Array:
@@ -1051,7 +1136,6 @@ def PriceZone_Data_Supplement():
                         All_Sheets_Data_Dict["aData"][keyvalue]["价格带"] = "-"
                 else:
                     All_Sheets_Data_Dict["aData"][keyvalue]["价格带"] = "-"
-
     return All_Sheets_Data_Dict["aData"]
 
 
@@ -1062,7 +1146,6 @@ def Formula_Data_Supplement(Data_Dict):
         Dict_With_Formula_Data[k] = v
         for (formula_title, formula_content) in Build_Formula_Content(v, Sum_Row_Number).items():
             Dict_With_Formula_Data[k][formula_title] = formula_content
-
     return Dict_With_Formula_Data
 
 
