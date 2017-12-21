@@ -27,7 +27,7 @@ import urllib.request
 import re
 import types
 import CheckRegister as ckr
-import CheckUpdate as cku
+#import CheckUpdate as cku
 
 global Status_label, ProgressValue, download_ProgressValue, isRegistered, UserName, Company, Department, Software_Name, Version
 global BW_Data_KeyTitle, BW_Title_Mapping, Column_Name, Final_Table_Title, FileName_Mapping, Excel_App, All_Sheets_Data_Dict, Transit_Path
@@ -285,7 +285,7 @@ def loadview():
     global floor_ignore_option, category_ignore_option, floor_ignore_checkbutton, category_ignore_checkbutton
 
     root = tkinter.Tk()
-    root.title('空间管理报表生成器-version:%s' % Version)
+    root.title('空间管理-v%s' % Version)
     ico = os.getcwd() + r'\sm.ico'
     root.iconbitmap(ico)
 
@@ -300,6 +300,7 @@ def loadview():
 
     #####################支付二维码#####################
     pay_windows = Toplevel()
+    pay_windows.protocol("WM_DELETE_WINDOW",lambda:pay_windows.withdraw())
     pay_windows.title("购买方式")
     pay_windows.iconbitmap(ico)
     path = os.getcwd() + r'\QR_Code.png'
@@ -307,32 +308,17 @@ def loadview():
     topLabel = Label(pay_windows, image=tkimg)
     topLabel.pack()
     pay_windows.withdraw()
-
-    #####################下载进度条#####################
-    download_windows = Toplevel()
-    download_windows.title("进度...")
-    download_windows.iconbitmap(ico)
-    download_ProgressValue = DoubleVar()
-    download_ProgressValue.set(0.0)
-    ttk.Progressbar(download_windows, 
-                                        orient="horizontal",
-                                        length=Progressbarwidth,
-                                        mode="determinate",
-                                        variable=download_ProgressValue).grid(column=1,
-                                                                                                                              row=1,
-                                                                                                                              sticky=W,
-                                                                                                                              columnspan=1)
-    download_windows.withdraw()
-
+    
     ####################自定义模式选择#####################
     ignore_option_window = Toplevel()
+    ignore_option_window.protocol("WM_DELETE_WINDOW",lambda:ignore_option_window.withdraw())
     ignore_option_window.geometry("201x60+%s+%s" % (root.winfo_screenwidth() // 2 - 100, root.winfo_screenheight() // 2 - 200))
-    ignore_option_window.title("模式选择")
+    ignore_option_window.title("模式")
     ignore_option_window.iconbitmap(ico)
     floor_ignore_option = IntVar()
     category_ignore_option = IntVar()
 
-    floor_ignore_checkbutton = Checkbutton(ignore_option_window, text="自定义楼层       ",
+    floor_ignore_checkbutton = Checkbutton(ignore_option_window, text="自定义楼层   ",
                              font='微软雅黑 -13',
                              height=1,
                              variable=floor_ignore_option,
@@ -352,7 +338,7 @@ def loadview():
                                                                                 columnspan=1)
 
     Button(ignore_option_window, text="确定",
-                                                                       width=20,
+                                                                       width=24,
                                                                        font='微软雅黑 -13 bold',
                                                                        command = lambda : ignore_option_window.withdraw()).grid(column=1,
                                                                                                                                                 row=2,
@@ -589,26 +575,34 @@ def loadview():
            width=6,
            height=1,
            command=lambda:ignore_option_window.deiconify()).grid(column=1,
-                                               row=8,
-                                               sticky=W,
-                                               columnspan=1)    
-
+                                                                   row=8,
+                                                                   sticky=W,
+                                                                   columnspan=1)
+                                            
     Button(root, text="检查更新",
            font='微软雅黑 -9',
            width=6,
            height=1,
-           command=lambda:Add_Thread(cku.check_update("130.130.200.30",
-                                        Software_Name, Version, download_windows, DownLoad))).grid(column=3,
-                                                                                                   row=8,
-                                                                                                   sticky=W,
-                                                                                                   columnspan=1)
-
+           command=lambda:Update_Info_Write()).grid(column=3,
+                                                                           row=8,
+                                                                           sticky=W,
+                                                                           columnspan=1)
      ########################################################                                       
     Add_Thread(lambda: Check_registration_Status_label(
         "http://130.130.200.49", "registrationcode.ini", b"1234567890123456"))
 
     root.mainloop()
 
+def Update_Info_Write():
+    file_open = open(r'C:\UpdateInfo.ini','w+')
+    current_path = os.getcwd()
+    file_open.write(current_path + '-' + Software_Name + '-' + Version)
+    file_open.close()
+    try:
+        win32api.ShellExecute(0, 'open', current_path + r'\Update\CheckUpdate.exe', '','',1)
+        tkinter.messagebox.showinfo('提示！','正在打开更新程序......')
+    except Exception as e:
+        tkinter.messagebox.showinfo('警告！','未找到更新程序！' + str(e))
 
 class myThread (threading.Thread):
 
