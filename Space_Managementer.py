@@ -38,7 +38,7 @@ global pricezone_data_StrValue
 global budget_data_StrValue
 global floor_ignore_option, category_ignore_option, floor_ignore_checkbutton, category_ignore_checkbutton
 
-Version = "3.0"
+Version = "4.0"
 Software_Name = "sm"
 
 All_Sheets_Data_Dict = {}
@@ -344,7 +344,29 @@ def loadview():
                                                                                                                                                 row=2,
                                                                                                                                                 sticky=W + N + S + E,
                                                                                                                                                 columnspan=2)      
+    ###################验证码输入######################
+
+    input_window = Toplevel()
+    input_window.title("输入验证码")
+    input_window.geometry("282x24+%s+%s" % (input_window.winfo_screenwidth() // 2 - 140, input_window.winfo_screenheight() // 2 - 200))
+    input_StrVar = StringVar()
+    Entry(input_window, font='微软雅黑 -10',
+                  width=38,
+                  textvariable=input_StrVar,
+                  justify=LEFT).grid(column=1,
+                                     row=1,
+                                     sticky=N + S + E + W)
+    Button(input_window, text="验证",
+       width=7,
+       font='微软雅黑 -9 bold',
+       command = lambda:Check_registration_Status_label("http://130.130.200.49", "sm", input_StrVar.get(), input_window, "registrationcode.ini",b"1234567890123456")).grid(column=2,
+                            row=1,
+                            sticky=W)
+    input_window.withdraw()
     ######################################################
+
+
+
 
     financial_data_StrValue = StringVar()
     management_data_StrValue = StringVar()
@@ -589,7 +611,7 @@ def loadview():
                                                                            columnspan=1)
      ########################################################                                       
     Add_Thread(lambda: Check_registration_Status_label(
-        "http://130.130.200.49", "registrationcode.ini", b"1234567890123456"))
+        "http://130.130.200.49", "sm", None, input_window,"registrationcode.ini", b"1234567890123456"))
 
     root.mainloop()
 
@@ -1539,9 +1561,10 @@ def Build_Final_Table(FilePath, del_option, sort_option):
         Excel_Workbook.Close()
 
 
-def Check_registration_Status_label(ip, filename, keyvalue):
+def Check_registration_Status_label(ip, appname, Md5, inputview, filename, keyvalue):
     global isRegistered, UserName, Company, Department
-    Registration = ckr.registration_check(ip, filename, keyvalue)
+    inputview.withdraw()
+    Registration = ckr.registration_check(ip, appname, Md5, inputview, filename, keyvalue)
     if Registration[0]:
         isRegistered = True
         UserName = Registration[1]["UserName"]
