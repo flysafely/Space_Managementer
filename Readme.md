@@ -1,7 +1,11 @@
 # Space_Managementer（空间管理）
 为公司定制报表生成工具
+
 基于Python3.5.3
+
 >[演示视频(中文配音)](http://v.youku.com/v_show/id_XMzI0ODQ1ODMwMA==.html?spm=a2h3j.8428770.3416059.1)
+
+![image](https://github.com/flysafely/Space_Managementer/blob/master/ep.jpg)
 
 更新日志
 <空间管理>
